@@ -211,7 +211,7 @@ function commandsModule({
           viewport.element,
           filterImageIds
         );
-        const frame_annotations = {};
+        const frame_annotations = [];
         const viewportImageIds = viewport.getImageIds();
         annotations.forEach(annotation => {
           const imageId = annotation.metadata.referencedImageId;
@@ -220,24 +220,38 @@ function commandsModule({
           const p1 = transformWorldToIndex(imageData, point1);
           const p2 = transformWorldToIndex(imageData, point2);
           const imageIdIndex = viewportImageIds.indexOf(imageId);
-          if (frame_annotations[imageIdIndex] === undefined) {
-            frame_annotations[imageIdIndex] = {
+
+          let frame = frame_annotations.find(f => f.frame_number === imageIdIndex);
+          if (!frame) {
+            frame = {
+              frame_number: imageIdIndex,
+              coordinate_space: "LPS",
               pleura_lines: [],
               b_lines: [],
             };
+            frame_annotations.push(frame);
           }
+
           if (annotationType === UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.PLEURA) {
-            frame_annotations[imageIdIndex].pleura_lines.push([
-              [p1[0], p1[1], 0],
-              [p2[0], p2[1], 0],
-            ]);
-          } else if (
-            annotationType === UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.BLINE
-          ) {
-            frame_annotations[imageIdIndex].b_lines.push([
-              [p1[0], p1[1], 0],
-              [p2[0], p2[1], 0],
-            ]);
+            frame.pleura_lines.push({
+              rater: "",
+              line: {
+                points: [
+                  [p1[0], p1[1], 0],
+                  [p2[0], p2[1], 0],
+                ]
+              }
+            });
+          } else if (annotationType === UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.BLINE) {
+            frame.b_lines.push({
+              rater: "",
+              line: {
+                points: [
+                  [p1[0], p1[1], 0],
+                  [p2[0], p2[1], 0],
+                ]
+              }
+            });
           }
         });
 
@@ -248,12 +262,12 @@ function commandsModule({
           mask_type: 'fan',
           angle1: configuration.startAngle,
           angle2: configuration.endAngle,
-          center_rows_px: configuration.center[0],
-          center_cols_px: configuration.center[1],
-          radius1: configuration.innerRadius,
-          radius2: configuration.outerRadius,
-          image_size_rows: instance.rows,
-          image_size_cols: instance.columns,
+          center_rows_px: Math.round(configuration.center[0]),
+          center_cols_px: Math.round(configuration.center[1]),
+          radius1: Math.round(configuration.innerRadius),
+          radius2: Math.round(configuration.outerRadius),
+          image_size_rows: Math.round(instance.rows),
+          image_size_cols: Math.round(instance.columns),
           AnnotationLabels: labels,
           frame_annotations,
         };
